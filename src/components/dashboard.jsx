@@ -99,12 +99,28 @@ class DashBoard extends Component {
   }
   handleFiles = files => {
     var reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = (e)=> {
         // Use reader.result
-        alert(reader.headers)
+        let fileData = reader.result.split('\n');    
+        let data = [];
+        fileData.forEach((element, index) => {
+            if(index) {
+                const elementRaw = element.split(',');
+                if(element) {
+                    let param = {
+                        'name' : elementRaw[0],
+                        'email' : elementRaw[1],
+                        'age' : elementRaw[2],
+                        'gender' : elementRaw[3]
+                    }
+                    data.push(param);
+                }
+            }
+        });
+        localStorage.setItem('pateintDetail', JSON.stringify(data)); 
+        this.setState({rows:data})
     }
     reader.readAsText(files[0]);
-    console.log(files[0])
 }
 
 
