@@ -1,24 +1,25 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import { Router, Route, Switch } from 'react-router-dom';
+import {history} from './healper/history';
+import NavigationBar from './components/navigation'
+import Signup from './components/signup'
+import Login from './components/login'
+import DashBoard from './components/dashboard'
+import PrivateRoute from './components/privateroute'
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+        <Router history={history}>
+          <Switch>
+            <Route  exact path="/signup" name="signup" component={(e) => { return <Signup/> }} />
+            <PrivateRoute  path="/login" name="login" component={(e) => { return <Login/> }} />
+            <PrivateRoute   path="/dashboard" name="dashboard" component={DashBoard} />
+            <Route path="/" name="navigation" component={NavigationBar} />
+          
+          </Switch>
+      </Router>
     </div>
   );
 }
