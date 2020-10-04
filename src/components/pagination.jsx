@@ -8,30 +8,34 @@ export default class PaginateComponent extends Component {
             offset: 0,
             perPage: 5,
             currentPage: 0,
-            pageCount:0
+            pageCount:0,
+            
         }
     }
     componentDidMount =()=>{
         let {totalData}=this.props
-        console.log(totalData )
         this.setState({
            pageCount: Math.ceil(totalData.length / this.state.perPage),
-        },() => {
-           this.props.paginateData(this.state.offset, this.state.offset + this.state.perPage)
         })
     }
     handleChange =(event,value)=>{
-        //let {totalData}=this.props
         const selectedPage = value;
         const offset = (selectedPage-1) * this.state.perPage;
         this.setState({
             currentPage: selectedPage,
             offset: offset
         }, () => {
-            this.props.paginateData(this.state.offset, this.state.offset + this.state.perPage)
+            this.props.paginateData(this.state.offset, this.state.offset + this.state.perPage,this.state.perPage,this.state.currentPage)
         })
-        
     }
+      componentDidUpdate(prevProps){
+        let {totalData}=this.props
+          if(this.props.totalData.length!==prevProps.totalData.length){
+            this.setState({
+                pageCount: Math.ceil(totalData.length / this.state.perPage)
+             })
+          }
+      }
 
     render(){
         const {pageCount}=this.state

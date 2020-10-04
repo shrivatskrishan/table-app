@@ -14,25 +14,29 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import InputBase from '@material-ui/core/InputBase';
 import PaginateComponent from './pagination'
+import { connect } from "react-redux";
 import ReactFileReader from 'react-file-reader'
+import {genrateGuid} from '../healper/genrateGuid'
+import {patientDataDetail} from '../action'
 
 class DashBoard extends Component {
   constructor() {
     super();
     this.state = {
+      offset: 0,
+      perPage: 5,
+      currentPage: 0,
+      pageCount:0,
+      uptoData:5,
       open: false,
-      rows: [],
+      rows: JSON.parse(localStorage.getItem("pateintDetail")),
       user: {},
     };
   }
 
   componentDidMount=()=>{
-    let patientData=JSON.parse(localStorage.getItem('pateintDetail'));
-    if(patientData){
-      this.setState({
-        rows: patientData
-      });
-    }
+    const { dispatch } = this.props;
+    dispatch(patientDataDetail.getAllPateientData(this.state.offset,this.state.perPage))
   }
 
   handlaeChangeDailog = (event) => {
@@ -45,6 +49,7 @@ class DashBoard extends Component {
       user: userDetail,
     });
   };
+
   handleClickOpen = () => {
     this.setState({
       open: true,
@@ -58,74 +63,39 @@ class DashBoard extends Component {
   };
 
   addPatient = () => {
+    const { dispatch } = this.props;
     let { user } = this.state;
-    let rows =JSON.parse(localStorage.getItem('pateintDetail'));
-    rows=rows?rows:[]
-    rows.push(user)
-    localStorage.setItem('pateintDetail', JSON.stringify(rows)); 
-    this.setState({
-      open: false,
-      rows 
-    });
-    this.changePage(0,5)
+    user.id=genrateGuid()
+    dispatch(patientDataDetail.savePatientDetail(user))
+    this.handleClose()
   };
 
   searchValue =(event)=>{
-    let rowsData =JSON.parse(localStorage.getItem('pateintDetail'));
-    const searchData = rowsData.filter(item => {
-      return Object.keys(item).some(key =>
-        item[key].toString().toLowerCase().includes(event.target.value.toLowerCase())
-      );
-    });
-    this.setState({
-      rows :searchData
-    });
-
+    const { dispatch } = this.props;
+    dispatch(patientDataDetail.searchPationet(event.target.value,this.state.offset,this.state.uptoData))
   }
 
-  deletePatient =(index)=>{
-    let {rows}=this.state;
-    rows.splice(index, 1);
-    this.setState({
-      rows
-    });
-    localStorage.setItem('pateintDetail', JSON.stringify(rows)); 
+  deletePatient =(id)=>{
+    const { dispatch } = this.props;
+    dispatch(patientDataDetail.deletePatientData(id,this.state.offset,this.state.uptoData))
+  }
+  
+
+  changePage =(offset,perpageData,perPage,currentPage)=>{
+    const { dispatch } = this.props;
+    dispatch(patientDataDetail.getAllPateientData(offset,perpageData))
+    this.setState({offset,currentPage,uptoData:perpageData,perPage})
   }
 
-  changePage =(offset,perpageData)=>{
-    let rowsData =JSON.parse(localStorage.getItem('pateintDetail'));
-    const perPageValue = rowsData.slice(offset,perpageData)
-    this.setState({rows:perPageValue})
-  }
   handleFiles = files => {
-    var reader = new FileReader();
-    reader.onload = (e)=> {
-        // Use reader.result
-        let fileData = reader.result.split('\n');    
-        let data = [];
-        fileData.forEach((element, index) => {
-            if(index) {
-                const elementRaw = element.split(',');
-                if(element) {
-                    let param = {
-                        'name' : elementRaw[0],
-                        'email' : elementRaw[1],
-                        'age' : elementRaw[2],
-                        'gender' : elementRaw[3]
-                    }
-                    data.push(param);
-                }
-            }
-        });
-        localStorage.setItem('pateintDetail', JSON.stringify(data)); 
-        this.setState({rows:data})
-    }
-    reader.readAsText(files[0]);
-}
-
+    const { dispatch } = this.props;
+    dispatch(patientDataDetail.readFile(files,this.state.offset,this.state.perPage))
+   
+  }
 
   render() {
-    const { rows, open } = this.state;
+    const { open } = this.state;
+    const {patientData}=this.props
     return (
       <>
         <div>
@@ -223,8 +193,8 @@ class DashBoard extends Component {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((row,index) => (
-                <TableRow key={index}>
+              {patientData.map((row,index) => (
+                <TableRow key={row.id}>
                   <TableCell component="th" scope="row">
                     {row.name}
                   </TableCell>
@@ -232,7 +202,7 @@ class DashBoard extends Component {
                   <TableCell align="right">{row.age}</TableCell>
                   <TableCell align="right">{row.gender}</TableCell>
                   <TableCell align="right">
-                    <Button variant="contained" color="secondary" onClick={()=>this.deletePatient(index)}>
+                    <Button variant="contained" color="secondary" onClick={()=>this.deletePatient(row.id)}>
                       Delete
                     </Button>
                   </TableCell>
@@ -241,8 +211,8 @@ class DashBoard extends Component {
             </TableBody>
           </Table>
         </TableContainer>
-        {rows.length>0 && <div style={{position: "absolute",right: '11px',padding: "14px"}}>
-           <PaginateComponent totalData={rows} paginateData={this.changePage}/>
+        {patientData.length>0 && <div style={{position: "absolute",right: '11px',padding: "14px"}}>
+           <PaginateComponent perpageData={patientData} totalData={JSON.parse(localStorage.getItem("pateintDetail"))} paginateData={this.changePage}/>
         </div>
           
         }
@@ -251,4 +221,10 @@ class DashBoard extends Component {
     );
   }
 }
-export default DashBoard;
+function mapStateToProps(state) {
+  const { patientData } = state.tableDataReducer;
+  return {
+    patientData
+  };
+}
+export default connect(mapStateToProps)(DashBoard);
